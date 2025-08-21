@@ -20,6 +20,17 @@
 -->
 # Release Notes
 
+### 7.0.0 (Aug 21, 2025)
+
+**Fixes:**
+
+* [GH-98](https://github.com/apache/cordova-app-hello-world/pull/98) fix(css): Fix extra padding causing scrolling
+
+**Chores:**
+
+* [GH-99](https://github.com/apache/cordova-app-hello-world/pull/99) chore: updated defaults, license headers & added release audit workflow
+* [GH-78](https://github.com/apache/cordova-app-hello-world/pull/78) chore: correct `access` inline comment
+
 ### 6.0.0 (Oct 27, 2021)
 
 * [GH-73](https://github.com/apache/cordova-app-hello-world/pull/73) cleanup!(`config.xml`): simplify defaults
