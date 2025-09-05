@@ -10,6 +10,10 @@ jobs:
     name: Build Release APK
     runs-on: ubuntu-latest
 
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      PATH: ${{ env.ANDROID_HOME }}/cmdline-tools/latest/bin:${{ env.ANDROID_HOME }}/platform-tools:${{ env.PATH }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -28,19 +32,24 @@ jobs:
       - name: Install Cordova globally
         run: npm install -g cordova
 
+      - name: Install Android SDK and tools
+        run: |
+          sudo mkdir -p $ANDROID_HOME/cmdline-tools
+          curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          unzip sdk.zip -d $ANDROID_HOME/cmdline-tools
+          mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+
       - name: Prepare Android platform
         run: |
           cd template_src
-          if cordova platform ls | grep android; then
-            echo "Android platform already exists"
-          else
-            cordova platform add android
-          fi
+          cordova platform add android || echo "Android platform already added"
 
       - name: Build APK
         run: |
           cd template_src
-          cordova build android --release || echo "Build failed but continuing"
+          cordova build android --release
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
