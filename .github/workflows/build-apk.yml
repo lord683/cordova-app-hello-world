@@ -27,10 +27,11 @@ jobs:
       - name: Install Cordova
         run: npm install -g cordova
 
-      - name: Decode keystore (if signing)
-        if: secrets.KEYSTORE_BASE64 != ''
+      - name: Decode keystore (optional)
         run: |
-          echo "$KEYSTORE_BASE64" | base64 --decode > template_src/keystore/my-release-key.keystore
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > template_src/keystore/my-release-key.keystore
+          fi
 
       - name: Add Android platform
         run: |
@@ -41,11 +42,11 @@ jobs:
       - name: Build APK
         run: |
           cd template_src
-          cordova build android --release \
-            -- --keystore=template_src/keystore/my-release-key.keystore \
-               --storePassword=$KEYSTORE_PASSWORD \
-               --alias=$KEY_ALIAS \
-               --password=$KEY_ALIAS_PASSWORD || true
+          if [ -f "keystore/my-release-key.keystore" ]; then
+            cordova build android --release -- --keystore=template_src/keystore/my-release-key.keystore --storePassword=${{ secrets.KEYSTORE_PASSWORD }} --alias=${{ secrets.KEY_ALIAS }} --password=${{ secrets.KEY_ALIAS_PASSWORD }}
+          else
+            cordova build android --release
+          fi
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
