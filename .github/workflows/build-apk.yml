@@ -6,21 +6,28 @@ on:
 
 jobs:
   build:
+    name: Build Android APK
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Node.js
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
 
-      - name: Install Cordova
+      - name: Install Cordova globally
         run: npm install -g cordova
 
-      - name: Add Android platform
+      - name: Prepare Android platform
         run: |
           cd template_src
           cordova platform remove android || true
@@ -31,8 +38,8 @@ jobs:
           cd template_src
           cordova build android --release
 
-      - name: Upload APK artifact
+      - name: Upload unsigned APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: aviator-apk
+          name: aviator-unsigned-apk
           path: template_src/platforms/android/app/build/outputs/apk/release/*.apk
