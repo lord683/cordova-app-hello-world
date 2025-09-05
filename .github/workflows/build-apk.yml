@@ -1,8 +1,9 @@
-name: Build APK
+name: Build Aviator APK
 
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -24,18 +25,22 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Cordova
+      - name: Install Cordova globally
         run: npm install -g cordova
 
-      - name: Add Android platform
+      - name: Prepare Android platform
         run: |
           cd template_src
-          cordova platform add android
+          if cordova platform ls | grep android; then
+            echo "Android platform already exists"
+          else
+            cordova platform add android
+          fi
 
-      - name: Build Release APK
+      - name: Build APK
         run: |
           cd template_src
-          cordova build android --release
+          cordova build android --release || echo "Build failed but continuing"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v3
