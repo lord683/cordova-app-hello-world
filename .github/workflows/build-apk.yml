@@ -1,4 +1,4 @@
-name: Build Aviator APK Fast
+name: Build Aviator APK
 
 on:
   push:
@@ -17,14 +17,8 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Cordova
-        run: npm install -g cordova
-
-      - name: Add Android Platform
-        run: |
-          cd template_src
-          cordova platform rm android || true
-          cordova platform add android
+      - name: Setup Cordova Android + SDK
+        uses: nileshchavan/setup-cordova-android@v1
 
       - name: Build APK
         run: |
