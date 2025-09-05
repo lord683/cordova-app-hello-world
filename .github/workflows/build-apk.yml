@@ -1,52 +1,71 @@
 name: Build Aviator APK
 
 on:
-  workflow_dispatch: # allows manual trigger
+  push:
+    branches: [ main ]
 
 jobs:
   build:
+    name: Build Release APK
     runs-on: ubuntu-latest
-    env:
-      ANDROID_HOME: /opt/android-sdk
-      PATH: /opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:$PATH
 
     steps:
+      # Install tar if missing
+      - name: Install tar
+        run: sudo apt-get update && sudo apt-get install -y tar unzip openjdk-17-jdk
+
+      # Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Install Node.js
+      # Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      - name: Install Cordova & Android SDK tools
-        run: |
-          npm install -g cordova
-          sudo mkdir -p $ANDROID_HOME/cmdline-tools
-          sudo curl -o sdk-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-          sudo unzip sdk-tools.zip -d $ANDROID_HOME/cmdline-tools
-          yes | $ANDROID_HOME/cmdline-tools/cmdline-tools/bin/sdkmanager --licenses
-          $ANDROID_HOME/cmdline-tools/cmdline-tools/bin/sdkmanager "platforms;android-33" "build-tools;33.0.2"
+      # Install Cordova globally
+      - name: Install Cordova
+        run: npm install -g cordova
 
-      - name: Decode Keystore
+      # Decode keystore from base64 secret
+      - name: Setup Keystore
         run: |
-          mkdir -p template_src/keystore
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > template_src/keystore/my-release-key.keystore
 
-      - name: Build APK
+      # Add Android platform
+      - name: Add Android Platform
         run: |
           cd template_src
           cordova platform add android
-          cordova build android --release -- --keystore=template_src/keystore/my-release-key.keystore --storePassword=${{ secrets.KEYSTORE_PASSWORD }} --alias=${{ secrets.KEY_ALIAS }} --password=${{ secrets.KEY_ALIAS_PASSWORD }}
 
-      - name: Upload APK artifact
+      # Build APK
+      - name: Build Release APK
+        run: |
+          cd template_src
+          cordova build android --release
+
+      # Sign APK using keystore secrets
+      - name: Sign APK
+        run: |
+          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
+          -keystore template_src/keystore/my-release-key.keystore \
+          -storepass ${{ secrets.KEYSTORE_PASSWORD }} \
+          -keypass ${{ secrets.KEY_ALIAS_PASSWORD }} \
+          template_src/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk \
+          ${{ secrets.KEY_ALIAS }}
+
+      # Align APK
+      - name: Align APK
+        run: |
+          sudo apt-get install -y zipalign
+          zipalign -v 4 \
+          template_src/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk \
+          template_src/platforms/android/app/build/outputs/apk/release/aviator.apk
+
+      # Upload signed APK as artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: aviator-apk
-          path: template_src/platforms/android/app/build/outputs/apk/release/*.apk
+          path: template_src/platforms/android/app/build/outputs/apk/release/aviator.apk
