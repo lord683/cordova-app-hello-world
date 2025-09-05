@@ -1,0 +1,34 @@
+name: Build Cordova Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Cordova
+        run: npm install -g cordova
+
+      - name: Add Android platform
+        run: cordova platform add android@10
+        working-directory: template_src
+
+      - name: Build release APK
+        run: cordova build android --release
+        working-directory: template_src
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: AviatorPro-APK
+          path: template_src/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
