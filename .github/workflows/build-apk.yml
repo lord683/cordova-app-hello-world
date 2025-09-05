@@ -1,22 +1,20 @@
 name: Build Aviator APK
 
 on:
-  push:
-    branches: [ main ]
+  workflow_dispatch: # allows manual trigger
 
 jobs:
   build:
-    name: Build Release APK
     runs-on: ubuntu-latest
-
     env:
-      JAVA_HOME: /usr/lib/jvm/java-17-temurin
+      ANDROID_HOME: /opt/android-sdk
+      PATH: /opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:$PATH
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Java
+      - name: Setup Java
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
@@ -27,22 +25,24 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Cordova
-        run: npm install -g cordova
+      - name: Install Cordova & Android SDK tools
+        run: |
+          npm install -g cordova
+          sudo mkdir -p $ANDROID_HOME/cmdline-tools
+          sudo curl -o sdk-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          sudo unzip sdk-tools.zip -d $ANDROID_HOME/cmdline-tools
+          yes | $ANDROID_HOME/cmdline-tools/cmdline-tools/bin/sdkmanager --licenses
+          $ANDROID_HOME/cmdline-tools/cmdline-tools/bin/sdkmanager "platforms;android-33" "build-tools;33.0.2"
 
-      - name: Decode keystore
+      - name: Decode Keystore
         run: |
           mkdir -p template_src/keystore
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > template_src/keystore/my-release-key.keystore
 
-      - name: Prepare Android platform
+      - name: Build APK
         run: |
           cd template_src
           cordova platform add android
-
-      - name: Build Release APK
-        run: |
-          cd template_src
           cordova build android --release -- --keystore=template_src/keystore/my-release-key.keystore --storePassword=${{ secrets.KEYSTORE_PASSWORD }} --alias=${{ secrets.KEY_ALIAS }} --password=${{ secrets.KEY_ALIAS_PASSWORD }}
 
       - name: Upload APK artifact
