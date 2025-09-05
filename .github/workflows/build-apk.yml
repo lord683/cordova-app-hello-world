@@ -1,4 +1,4 @@
-name: Build and Sign Aviator APK
+name: Build Aviator APK Fast
 
 on:
   push:
@@ -9,68 +9,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout Repo
         uses: actions/checkout@v3
 
-      - name: Set up Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Install Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      - name: Install Cordova and Android tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y unzip wget tar lib32stdc++6 lib32z1 zipalign
-          npm install -g cordova
-          export ANDROID_HOME=$HOME/android-sdk
-          mkdir -p $ANDROID_HOME/cmdline-tools
-          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-          unzip cmdline-tools.zip -d $ANDROID_HOME
-          mkdir -p $ANDROID_HOME/cmdline-tools/latest
-          mv $ANDROID_HOME/cmdline-tools/* $ANDROID_HOME/cmdline-tools/latest/
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33"
+      - name: Install Cordova
+        run: npm install -g cordova
 
-      - name: Prepare Android platform
+      - name: Add Android Platform
         run: |
           cd template_src
           cordova platform rm android || true
           cordova platform add android
 
-      - name: Decode Keystore
-        run: |
-          echo "$KEYSTORE_BASE64" | base64 --decode > template_src/keystore/my-release-key.keystore
-
       - name: Build APK
         run: |
           cd template_src
-          export ANDROID_HOME=$HOME/android-sdk
           cordova build android --release
 
-      - name: Sign APK
-        run: |
-          cd template_src
-          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
-          -keystore keystore/my-release-key.keystore \
-          -storepass $KEYSTORE_PASSWORD \
-          -keypass $KEY_ALIAS_PASSWORD \
-          platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk \
-          $KEY_ALIAS
-
-      - name: Align APK
-        run: |
-          cd template_src
-          zipalign -v 4 platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk \
-          platforms/android/app/build/outputs/apk/release/Aviator-Pro.apk
-
-      - name: Upload signed APK
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Aviator-Pro-APK
-          path: template_src/platforms/android/app/build/outputs/apk/release/Aviator-Pro.apk
+          name: Aviator-Unsigned-APK
+          path: template_src/platforms/android/app/build/outputs/apk/release/*.apk
