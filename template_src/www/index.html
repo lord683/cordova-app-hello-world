@@ -1,50 +1,176 @@
-<!DOCTYPE html>
-<!--
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
+<!doctype html>
+<html lang="en">    
+<head>    
+  <meta charset="utf-8" />    
+  <title>Aviator Pro — Flight Predictor (Premium)</title>    
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />    
+  <meta name="theme-color" content="#0b0b0c" />    
+  <style>    
+    :root{    
+      --bg:#0b0b0c;    
+      --panel:#121214;    
+      --panel-2:#17171a;    
+      --accent:#e50914;    
+      --accent-2:#E59407;    
+      --text:#fafafa;    
+      --muted:#a8a8ad;    
+      --success:#2ecc71;    
+      --warn:#f39c12;    
+      --danger:#ff4757;    
+      --line:#27272a;    
+    }    
+    *{box-sizing:border-box}    
+    html,body{height:100%}    
+    body{    
+      margin:0;background:linear-gradient(180deg,#0b0b0c,#131316);    
+      color:var(--text);font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;    
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;    
+    }    
+    .wrap{min-height:100dvh;display:flex;flex-direction:column}    
+    header{    
+      display:flex;align-items:center;justify-content:space-between;    
+      padding:12px 16px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.35);backdrop-filter: blur(6px);    
+      position:sticky;top:0;z-index:20;    
+    }    
+    .brand{display:flex;gap:10px;align-items:center}    
+    .logo{width:34px;height:34px;border-radius:50%;background:    
+      radial-gradient(circle at 30% 30%, #ff6b6b, #c0392b 70%);}    
+    .brand h1{margin:0;font-size:16px;letter-spacing:.6px}    
+    .btn{appearance:none;border:1px solid var(--line);background:var(--panel-2);color:var(--text);    
+      padding:10px 14px;border-radius:10px;cursor:pointer;transition:.2s}    
+    .btn:hover{transform:translateY(-1px)}    
+    .btn.primary{background:var(--accent);border-color:#b20710}    
+    .btn.success{background:var(--success);border-color:#1f9d58}    
+    .btn.ghost{background:transparent}    
+    .btn.block{width:100%}    
+    .grid{display:grid;gap:12px}    
+    main{flex:1;display:grid;place-items:center;padding:16px}    
+    .stage{    
+      width:min(920px,100%);background:linear-gradient(180deg,#141417,#0e0e10);    
+      border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.45);    
+      overflow:hidden;    
+    }    
+    .stage-head{    
+      display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;    
+      padding:12px 14px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.25)    
+    }    
+    .pill{display:inline-flex;gap:8px;align-items:center;padding:8px 10px;border-radius:999px;background:#121214;border:1px solid var(--line);color:var(--muted)}    
+    .pill strong{color:var(--text)}    
+    canvas{display:block;width:100%;height:auto;background:radial-gradient(1200px 300px at 50% 120%, #1a1a1f, #0d0d10)}    
+    .hud{    
+      display:grid;gap:10px;grid-template-columns:1fr 1fr 1fr; padding:12px;border-top:1px solid var(--line);background:#101013    
+    }    
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}    
+    label.small{font-size:12px;color:var(--muted)}    
+    input,select{    
+      width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);    
+      background:#0d0d10;color:var(--text);outline:none    
+    }    
+    .actions{display:flex;gap:8px}    
+    .mult{    
+      font-size:38px;font-weight:800;letter-spacing:1px;text-shadow:0 2px 0 rgba(0,0,0,.4);    
+    }    
+    .hint{font-size:13px;color:#ffd166}    
+    .paywall{    
+      position:fixed;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.72),rgba(0,0,0,.88));    
+      display:flex;align-items:center;justify-content:center;padding:18px;z-index:9999;    
+    }    
+    .sheet{    
+      width:min(520px,100%); background:linear-gradient(180deg,#161619,#0f0f12);    
+      border:1px solid var(--line);border-radius:18px; padding:16px; box-shadow:0 20px 60px rgba(0,0,0,.6)    
+    }    
+    .sheet h2{margin:6px 0 12px 0}    
+    .row{display:flex;gap:10px;flex-wrap:wrap}    
+    .muted{color:var(--muted)}    
+    .list{margin:0;padding-left:18px}    
+    .sep{height:1px;background:var(--line);margin:12px 0}    
+    footer{padding:14px;text-align:center;color:var(--muted)}    
+    a{color:#ddd}    
+    .link{color:#ffd166;cursor:pointer}    
+    .badge{display:inline-block;padding:4px 8px;border:1px solid var(--line);border-radius:999px;background:#121214;font-size:12px}    
+    .toast{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:#202024;color:var(--text);border:1px solid var(--line);padding:10px 14px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);z-index:99999}    
+    .terms{max-height:45dvh;overflow:auto;font-size:13px;white-space:pre-line;background:#0f0f12;border:1px solid var(--line);border-radius:12px;padding:10px}    
+    .green{color:var(--success)} .red{color:var(--danger)}    
+  </style>    
+</head>    
+<body>    
 
-    http://www.apache.org/licenses/LICENSE-2.0
+<!-- ==================== BACKGROUND MUSIC ==================== -->
+<audio id="bgMusic" src="assets/audio/background.mp3" autoplay loop></audio>
 
-    Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-     KIND, either express or implied.  See the License for the
-    specific language governing permissions and limitations
-    under the License.
--->
-<html>
-    <head>
-        <meta charset="utf-8">
-        <!--
-        Customize this policy to fit your own app's needs. For more guidance, please refer to the docs:
-            https://cordova.apache.org/docs/en/latest/
-        Some notes:
-            * https://ssl.gstatic.com is required only on Android and is needed for TalkBack to function properly
-            * Disables use of inline scripts in order to mitigate risk of XSS vulnerabilities. To change this:
-                * Enable inline JS: add 'unsafe-inline' to default-src
-        -->
-        <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: content:;">
-        <meta name="format-detection" content="telephone=no">
-        <meta name="msapplication-tap-highlight" content="no">
-        <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover">
-        <meta name="color-scheme" content="light dark">
-        <link rel="stylesheet" href="css/index.css">
-        <title>Hello World</title>
-    </head>
-    <body>
-        <div class="app">
-            <h1>Apache Cordova</h1>
-            <div id="deviceready" class="blink">
-                <p class="event listening">Connecting to Device</p>
-                <p class="event received">Device is Ready</p>
-            </div>
+<div class="wrap">    
+  <header>    
+    <div class="brand">    
+      <div class="logo"></div>    
+      <h1>Aviator Pro • Premium</h1>    
+    </div>    
+    <div class="actions">    
+      <button class="btn" id="btnIntro">Introduction</button>    
+      <button class="btn ghost" id="btnTerms">Terms</button>    
+    </div>    
+  </header>    
+
+  <main>    
+    <div class="stage" id="stage">    
+      <div class="stage-head">    
+        <div class="pill"><span>Balance</span> <strong id="balance">$0.00</strong></div>    
+        <div class="pill"><span>Last Crash</span> <strong id="lastCrash">—</strong></div>    
+        <div class="pill"><span>Status</span> <strong id="status">Idle</strong></div>    
+      </div>  
+      <canvas id="game" width="1200" height="420"></canvas>      
+      <div class="hud">    
+        <div class="card grid">    
+          <label class="small">Bet Amount ($)</label>    
+          <input id="bet" type="number" min="1" step="1" value="10" />    
+          <div class="row">    
+            <button class="btn" data-quick="5">$5</button>    
+            <button class="btn" data-quick="10">$10</button>    
+            <button class="btn" data-quick="20">$20</button>    
+            <button class="btn" data-quick="50">$50</button>    
+          </div>    
+        </div>    
+        <div class="card grid" style="align-items:center;justify-items:center">    
+          <div class="mult" id="mult">1.00x</div>    
+          <div class="hint" id="hint">Assistant: waiting for launch…</div>    
         </div>
-        <script src="cordova.js"></script>
-        <script src="js/index.js"></script>
-    </body>
+        <div class="card grid">    
+          <label class="small">Controls</label>    
+          <div class="row">    
+            <button class="btn primary" id="btnStart">Start</button>    
+            <button class="btn success" id="btnCash">Cash Out</button>    
+            <button class="btn" id="btnMute">🔊</button>    
+          </div>    
+          <div class="row">    
+            <span class="badge">Target: <span id="targetText">—</span></span>    
+            <span class="badge">Streak: <span id="streak">0</span></span>    
+          </div>    
+        </div>
+      </div>    
+    </div>    
+  </main>    
+
+  <footer>    
+    <span class="muted">© 2025 Aviator Pro • Entertainment & strategy tool. </span>    
+    <span class="link" id="openTerms">Terms & Conditions</span>    
+  </footer>    
+</div>  
+
+<!-- PAYWALL, INTRO, TERMS, TOAST remain exactly the same as your original -->
+
+<script>
+// ================= AUDIO CONTROL =================
+const bgMusic = document.getElementById("bgMusic");
+const $btnMute = document.getElementById("btnMute");
+let muted = false;
+$btnMute.onclick = () => {
+  muted = !muted;
+  if (muted) bgMusic.pause();
+  else bgMusic.play();
+};
+
+// ================== YOUR ORIGINAL JS =================
+// (Keep all the game logic, paywall, Gumroad, canvas, etc. exactly as before)
+</script>
+
+</body>
 </html>
