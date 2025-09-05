@@ -3,7 +3,6 @@ name: Build Aviator APK
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
   build:
@@ -11,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      ANDROID_HOME: /usr/local/lib/android/sdk
+      JAVA_HOME: /usr/lib/jvm/java-17-temurin
 
     steps:
       - name: Checkout repository
@@ -28,28 +27,23 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Cordova globally
+      - name: Install Cordova
         run: npm install -g cordova
 
-      - name: Install Android SDK and tools
+      - name: Decode keystore
         run: |
-          sudo mkdir -p $ANDROID_HOME/cmdline-tools
-          curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-          unzip sdk.zip -d $ANDROID_HOME/cmdline-tools
-          mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+          mkdir -p template_src/keystore
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > template_src/keystore/my-release-key.keystore
 
       - name: Prepare Android platform
         run: |
           cd template_src
-          cordova platform add android || echo "Android platform already added"
+          cordova platform add android
 
-      - name: Build APK
+      - name: Build Release APK
         run: |
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
           cd template_src
-          cordova build android --release
+          cordova build android --release -- --keystore=template_src/keystore/my-release-key.keystore --storePassword=${{ secrets.KEYSTORE_PASSWORD }} --alias=${{ secrets.KEY_ALIAS }} --password=${{ secrets.KEY_ALIAS_PASSWORD }}
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
