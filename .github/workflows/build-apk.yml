@@ -2,7 +2,8 @@ name: Build Aviator APK
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
@@ -10,36 +11,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Set up Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: temurin
-          java-version: 17
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: temurin
+        java-version: 17
 
-      - name: Install Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 20
 
-      - name: Install Cordova globally
-        run: npm install -g cordova
+    - name: Install Cordova
+      run: npm install -g cordova
 
-      - name: Prepare Android platform
-        run: |
-          cd template_src
-          cordova platform remove android || true
-          cordova platform add android
+    - name: Add Android Platform
+      run: |
+        cd template_src
+        cordova platform remove android || true
+        cordova platform add android
 
-      - name: Build unsigned APK
-        run: |
-          cd template_src
-          cordova build android --release
+    - name: Build Release APK
+      run: |
+        cd template_src
+        cordova build android --release
 
-      - name: Upload unsigned APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: aviator-unsigned-apk
-          path: template_src/platforms/android/app/build/outputs/apk/release/*.apk
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: aviator-apk
+        path: template_src/platforms/android/app/build/outputs/apk/release/*.apk
