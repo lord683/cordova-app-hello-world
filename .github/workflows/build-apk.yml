@@ -9,62 +9,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code
-      - name: Checkout Repository
+      # 1. Checkout repo
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      # 2. Install dependencies
-      - name: Install System Dependencies
+      # 2. Install Java & Android tools
+      - name: Install Java and Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y openjdk-17-jdk zipalign unzip
+          sudo apt-get install -y openjdk-17-jdk wget unzip
 
+      # 3. Install Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
+      # 4. Install Cordova
       - name: Install Cordova
         run: npm install -g cordova
 
-      # 3. Decode keystore from secret
-      - name: Setup Keystore
-        run: |
-          mkdir -p template_src/keystore
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > template_src/keystore/my-release-key.keystore
-
-      # 4. Add Android platform
+      # 5. Add Android platform
       - name: Add Android Platform
         run: |
           cd template_src
           cordova platform add android
 
-      # 5. Build release APK
-      - name: Build APK
+      # 6. Build APK
+      - name: Build Release APK
         run: |
           cd template_src
           cordova build android --release
 
-      # 6. Sign APK
-      - name: Sign APK
-        run: |
-          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
-          -keystore template_src/keystore/my-release-key.keystore \
-          -storepass ${{ secrets.KEYSTORE_PASSWORD }} \
-          -keypass ${{ secrets.KEY_ALIAS_PASSWORD }} \
-          template_src/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk \
-          ${{ secrets.KEY_ALIAS }}
-
-      # 7. Align APK
-      - name: Align APK
-        run: |
-          zipalign -v 4 \
-          template_src/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk \
-          template_src/platforms/android/app/build/outputs/apk/release/aviator.apk
-
-      # 8. Upload APK artifact
-      - name: Upload APK Artifact
+      # 7. Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: aviator-apk
-          path: template_src/platforms/android/app/build/outputs/apk/release/aviator.apk
+          path: template_src/platforms/android/app/build/outputs/apk/release/*.apk
