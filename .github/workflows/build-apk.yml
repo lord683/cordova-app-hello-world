@@ -1,46 +1,46 @@
-name: Build Aviator APK
+name: Build APK
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
-    name: Build Android APK
     runs-on: ubuntu-latest
-
+    
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Java
-      uses: actions/setup-java@v3
-      with:
-        distribution: temurin
-        java-version: 17
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '11'
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 20
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
 
-    - name: Install Cordova
-      run: npm install -g cordova
+      - name: Decode Keystore
+        id: decode-keystore
+        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        run: |
+          echo ${{ secrets.KEYSTORE_BASE64 }} | base64 -d > app/keystore.jks
+          echo "KEYSTORE_PATH=app/keystore.jks" >> $GITHUB_ENV
 
-    - name: Add Android Platform
-      run: |
-        cd template_src
-        cordova platform remove android || true
-        cordova platform add android
+      - name: Build APK
+        run: |
+          ./gradlew assembleRelease
+        env:
+          KEYSTORE_PATH: ${{ env.KEYSTORE_PATH }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-    - name: Build Release APK
-      run: |
-        cd template_src
-        cordova build android --release
-
-    - name: Upload APK Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: aviator-apk
-        path: template_src/platforms/android/app/build/outputs/apk/release/*.apk
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-release
+          path: app/build/outputs/apk/release/app-release.apk
