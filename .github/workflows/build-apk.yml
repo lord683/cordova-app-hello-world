@@ -10,6 +10,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     
+    # Set environment variables at the job level
+    env:
+      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,9 +29,10 @@ jobs:
 
       - name: Decode Keystore
         id: decode-keystore
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        # Reference the environment variable instead of directly using secrets
+        if: env.KEYSTORE_BASE64 != ''
         run: |
-          echo ${{ secrets.KEYSTORE_BASE64 }} | base64 -d > app/keystore.jks
+          echo "$KEYSTORE_BASE64" | base64 -d > app/keystore.jks
           echo "KEYSTORE_PATH=app/keystore.jks" >> $GITHUB_ENV
 
       - name: Build APK
